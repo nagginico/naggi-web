@@ -1,0 +1,123 @@
+---
+const title = ['Hola,', 'soy', 'Nico.'];
+const lead = 'Cuento historias para que las marcas locales se vean grandes.';
+---
+console.log('intro corriendo');
+<section class="intro">
+  <h1 class="title intro__title">
+    {title.map((w) => <span class="word">{w}</span>)}
+  </h1>
+
+  <p class="lead intro__lead">
+    {lead.split(' ').map((w) => <span class="word">{w}</span>)}
+  </p>
+
+  <button class="glass intro__hint" type="button" aria-label="Deslizar hacia abajo">
+    <span>Deslizá</span>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 9l6 6 6-6" />
+    </svg>
+  </button>
+</section>
+
+<style>
+  .intro {
+    position: relative;
+    min-height: 100svh;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 1.5rem;
+    padding: 2rem;
+    text-align: center;
+  }
+
+  .intro__title {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0 0.25em;
+  }
+
+  .intro__lead { max-width: 32ch; }
+  .intro__lead .word { margin-right: 0.25em; }
+
+  .word {
+    display: inline-block;
+    opacity: 0;
+    transform: translateY(0.4em);
+    filter: blur(12px);
+    will-change: transform, opacity, filter;
+  }
+
+  .intro__hint {
+    position: absolute;
+    bottom: 2.5rem;
+    left: 50%;
+    translate: -50% 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.7rem 1.4rem;
+    color: var(--text);
+    font-family: var(--font-title);
+    font-weight: 600;
+    font-size: 0.85rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    opacity: 0;
+  }
+
+  .intro__hint svg { animation: bob 1.6s ease-in-out infinite; }
+
+  @keyframes bob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(4px); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .word, .intro__hint { opacity: 1; transform: none; filter: none; }
+    .intro__hint svg { animation: none; }
+  }
+</style>
+
+<script>
+  import { gsap } from 'gsap';
+  import { lenis } from '../scripts/lenis.js';
+
+  history.scrollRestoration = 'manual';
+  window.scrollTo(0, 0);
+
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const hint = document.querySelector('.intro__hint');
+  const target = '#escena-2';
+  let userTookOver = false;
+
+  const goNext = () =>
+    lenis.scrollTo(target, {
+      duration: 1.8,
+      easing: (t) => 1 - Math.pow(1 - t, 3),
+    });
+
+  hint?.addEventListener('click', goNext);
+
+  if (!reduce) {
+    const cancel = () => { userTookOver = true; };
+    ['wheel', 'touchstart', 'keydown'].forEach((e) =>
+      window.addEventListener(e, cancel, { once: true, passive: true })
+    );
+
+    gsap.timeline({ delay: 0.4 })
+      .to('.intro__title .word', {
+        opacity: 1, y: 0, filter: 'blur(0px)',
+        duration: 0.9, stagger: 0.35, ease: 'power3.out',
+      })
+      .to('.intro__lead .word', {
+        opacity: 1, y: 0, filter: 'blur(0px)',
+        duration: 0.6, stagger: 0.07, ease: 'power2.out',
+      }, '+=0.2')
+      .to(hint, { opacity: 1, duration: 0.6 }, '+=0.3')
+      .call(() => { if (!userTookOver) goNext(); }, [], '+=1.4');
+  }
+</script>
